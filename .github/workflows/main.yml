@@ -1,0 +1,47 @@
+name: Deploy Strapi
+
+on:
+  push:
+    branches:
+      - main  # El pipeline se ejecutará en cada push a la rama `main`.
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      # 1. Checkout del código
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      # 2. Configurar Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18  # Usa la versión que requiere Strapi
+          cache: 'npm'
+
+      # 3. Instalar dependencias
+      - name: Install dependencies
+        run: npm install
+
+      # 4. Construir el proyecto
+      - name: Build Strapi project
+        run: npm run build
+
+      # 5. Login a DockerHub
+      - name: Login to DockerHub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+
+      # 6. Construir imagen Docker
+      - name: Build Docker image
+        run: |
+          docker build -t ${{ secrets.DOCKER_USERNAME }}/strapi_app_dep:latest .
+
+      # 7. Push de la imagen a DockerHub
+      - name: Push Docker image
+        run: |
+          docker push ${{ secrets.DOCKER_USERNAME }}/strapi_app_dep:latest
